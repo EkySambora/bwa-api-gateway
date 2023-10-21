@@ -1,0 +1,35 @@
+const jwt = require("jsonwebtoken");
+
+const apiAdapter = require('../../apiAdapter')
+const {
+    URL_SERVICE_USER,
+    JWT_SECRET,
+    JWT_SECRET_REFRESH_TOKEN,
+    JWT_ACCESS_TOKEN_EXPIRED
+} = process.env
+
+const api = apiAdapter(URL_SERVICE_USER);
+
+module.exports = async(req,res) => {
+    try {
+        const refreshToken = req.body.refresh_token;
+        const email = req.body.email;
+        if(!refreshToken|| !email){
+            return res.status(400).json({
+                status:"error",
+                message: "invalid token"
+            })
+        }
+
+        await api.get("/refresh_tokens", { params: { refresh_token: refreshToken} });
+
+    } catch (error) {
+
+        if(error.code === 'ECONNREFUSED'){
+            return res.status(500).json({status:'error', message:'service unaviable'})
+        }
+
+        const {status,data} = error.response
+        return res.status(status).json(data)
+    }
+}
